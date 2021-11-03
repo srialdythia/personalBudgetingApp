@@ -94,8 +94,18 @@ public class HistoryActivity extends AppCompatActivity implements DatePickerDial
     @Override
     public void onDateSet(DatePicker datePicker, int year, int month, int dayOfMonth) {
         int months = month+1;
-        String date = dayOfMonth+"-"+months +"-"+year;
-        System.out.println("hallo"+date);
+        int digit = dayOfMonth;
+        String date;
+        int sum = 0;
+        while (digit > 0) {
+            sum = sum + 1;
+            digit = digit / 10;
+        }
+        if(sum == 1){
+            date = "0"+dayOfMonth+"-"+months +"-"+year;
+        }else{
+            date = dayOfMonth+"-"+months +"-"+year;
+        }
 
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserId);
         Query query = reference.orderByChild("date").equalTo(date);

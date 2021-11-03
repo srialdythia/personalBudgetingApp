@@ -47,7 +47,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
-                android:text="L 50%"
+                android:text="&#60; 50%"
                 android:layout_gravity="center_vertical"
                 android:textSize="12sp"/>
             <ImageView
@@ -56,13 +56,14 @@
                 android:layout_weight="1"
                 android:layout_marginTop="5dp"
                 android:src="@drawable/brown"/>
+
             <TextView
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                android:text="50% - 90%"
+                android:layout_height="14dp"
                 android:layout_gravity="center_vertical"
-                android:textSize="12sp"/>
+                android:layout_weight="2"
+                android:text="50% - 100%"
+                android:textSize="12sp" />
             <ImageView
                 android:layout_width="0dp"
                 android:layout_height="18dp"
@@ -73,7 +74,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
-                android:text="G 100%"
+                android:text="&#62; 100%"
                 android:layout_gravity="center_vertical"
                 android:textSize="12sp"/>
         </LinearLayout>
@@ -137,12 +138,16 @@
                             android:textColor="#000"
                             android:textSize="12sp"/>
                     </LinearLayout>
+
                     <ImageView
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:src="@drawable/ic_transport"
-                        android:layout_margin="10dp"
-                        android:layout_toEndOf="@id/linearLayoutTransport"/>
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_marginBottom="10dp"
+                        android:layout_toEndOf="@id/linearLayoutTransport"
+                        android:src="@drawable/ic_transport" />
                 </RelativeLayout>
                 <RelativeLayout
                     android:id="@+id/relativeLayoutFood"
