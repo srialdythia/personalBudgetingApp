@@ -1,2 +1,2 @@
-# personalBudgeting_1
-personalBudgeting_1
+# personalBudgeting
+personalBudgeting
