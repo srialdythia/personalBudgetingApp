@@ -20,8 +20,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginTop="30dp">
 
         <ImageView
             android:id="@+id/logo"
@@ -58,8 +59,27 @@
             android:textStyle="bold"
             android:gravity="center"
             android:layout_margin="10dp"
-            android:textAllCaps="true"
-            />
+            android:textAllCaps="true" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvAddress"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:text="Address" />
+
+            <ImageView
+                android:id="@+id/addImg"
+                android:layout_marginLeft="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_baseline_add_location_alt_24"/>
+        </LinearLayout>
 
         <Button
             android:id="@+id/logoutBtn"
@@ -73,7 +93,7 @@
             android:text="LOG OUT"
             android:textColor="#fff"
             android:textStyle="bold"
-            android:textSize="20sp"/>
+            android:textSize="20sp" />
     </LinearLayout>
 
 

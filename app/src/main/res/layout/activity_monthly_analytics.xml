@@ -21,6 +21,19 @@
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
+        <Button
+            android:layout_margin="10dp"
+            android:id="@+id/btnSearchMonth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select Month"/>
+        <TextView
+            android:layout_marginLeft="10dp"
+            android:id="@+id/tvPeriode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Periode: "/>
+
         <TextView
             android:id="@+id/totalBudgetAmountTextView"
             android:layout_width="match_parent"
@@ -36,7 +49,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="10dp">
             <ImageView
                 android:layout_width="0dp"
                 android:layout_height="18dp"
@@ -80,9 +94,12 @@
         </LinearLayout>
 
         <ScrollView
+            android:visibility="gone"
+            android:id="@+id/scrollView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <LinearLayout
+                android:paddingLeft="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">
@@ -110,7 +127,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -122,7 +139,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -173,7 +189,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -185,7 +201,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -232,7 +247,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -244,7 +259,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -295,7 +309,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -307,7 +321,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -358,7 +371,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -370,7 +383,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
 
                             <ImageView
@@ -422,7 +434,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -434,7 +446,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -485,7 +496,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -497,7 +508,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -548,7 +558,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -560,7 +570,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -611,7 +620,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -623,7 +632,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -674,7 +682,7 @@
                             android:text="$0.0"
                             android:textColor="@color/black"
                             android:textStyle="bold"
-                            android:textSize="18sp"/>
+                            android:textSize="15sp"/>
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -686,7 +694,6 @@
                                 android:layout_weight="2"
                                 android:text="Status"
                                 android:textColor="@color/black"
-                                android:textStyle="bold"
                                 android:textSize="12sp"/>
                             <ImageView
                                 android:layout_width="0dp"
@@ -714,14 +721,15 @@
                         android:src="@drawable/ic_other" />
                 </RelativeLayout>
 
+                <!--            Summary for spending at particular day -->
                 <com.anychart.AnyChartView
                     android:id="@+id/anyChartView"
                     android:layout_width="match_parent"
-                    android:layout_height="600dp"/>
+                    android:layout_height="600dp" />
 
-                <!--            Summary for spending at particular day -->
                 <RelativeLayout
-                    android:id="@+id/linearLayoutAnalysis"
+                    android:visibility="gone"
+                    android:id="@+id/rvSummary"
                     android:layout_marginTop="15dp"
                     android:layout_marginBottom="20dp"
                     android:layout_marginLeft="5dp"
@@ -731,6 +739,7 @@
                     android:orientation="horizontal">
 
                     <LinearLayout
+
                         android:id="@+id/linearLayout10"
                         android:orientation="vertical"
                         android:layout_width="250dp"
@@ -788,11 +797,14 @@
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_toEndOf="@+id/linearLayout10"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:src="@drawable/month"
-                        android:layout_margin="10dp"/>
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_marginBottom="10dp"
+                        android:layout_toEndOf="@+id/linearLayout10"
+                        android:src="@drawable/month" />
 
                 </RelativeLayout>
 

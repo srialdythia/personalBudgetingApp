@@ -7,6 +7,7 @@ import androidx.cardview.widget.CardView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -48,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
     private int totalAmountBudget = 0;
     private int totalAmountBudgetB = 0;
     private int totalAmountBudgetC = 0;
+    private int finalBudget;
+    private int finalSpend;
 
 
 
@@ -116,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
         analyticCardView.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, ChooseAnalyticActivity.class);
+                Intent intent = new Intent(MainActivity.this, MonthlyAnalyticsActivity.class);
                 startActivity(intent);
             }
         });
@@ -175,9 +178,10 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     totalAmountBudget=0;
                     budgetTv.setText("$ "+String.valueOf(0));
-
+                    finalBudget = totalAmountBudget;
                 }
-
+                personalRef.child("budget").setValue(totalAmountBudget);
+                Log.d("totalAmountBudget",String.valueOf(totalAmountBudget));
             }
 
             @Override
@@ -186,33 +190,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTodaySpentAmount() {
-        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-        Calendar cal = Calendar.getInstance();
-        String date = dateFormat.format(cal.getTime());
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserID);
-        Query query = reference.orderByChild("date").equalTo(date);
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                int totalAmount = 0;
-                for (DataSnapshot ds :  dataSnapshot.getChildren()){
-                    Map<String, Object> map = (Map<String, Object>)ds.getValue();
-                    Object total = map.get("amount");
-                    int pTotal = Integer.parseInt(String.valueOf(total));
-                    totalAmount+=pTotal;
-                    todayTv.setText("$ "+ totalAmount);
-                }
-                personalRef.child("today").setValue(totalAmount);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(MainActivity.this, databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
     private void getMonthSpentAmount() {
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
@@ -235,35 +213,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 personalRef.child("month").setValue(totalAmount);
                 totalAmountMonth = totalAmount;
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-    private void getWeekSpentAmount() {
-        MutableDateTime epoch = new MutableDateTime();
-        epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Weeks weeks = Weeks.weeksBetween(epoch, now);
-
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserID);
-        Query query = reference.orderByChild("week").equalTo(weeks.getWeeks());
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                int totalAmount = 0;
-                for (DataSnapshot ds :  dataSnapshot.getChildren()){
-                    Map<String, Object> map = (Map<String, Object>)ds.getValue();
-                    Object total = map.get("amount");
-                    int pTotal = Integer.parseInt(String.valueOf(total));
-                    totalAmount+=pTotal;
-                    weekTv.setText("$ "+ totalAmount);
-                }
-                personalRef.child("week").setValue(totalAmount);
+                finalSpend = totalAmount;
+                Log.d("totalAmountSpend",String.valueOf(totalAmountMonth));
             }
 
             @Override
@@ -303,7 +254,61 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    private void getTodaySpentAmount() {
+        DateFormat dateFormat = new SimpleDateFormat("d-MM-yyyy");
+        Calendar cal = Calendar.getInstance();
+        String date = dateFormat.format(cal.getTime());
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserID);
+        Query query = reference.orderByChild("date").equalTo(date);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
+                int totalAmount = 0;
+                for (DataSnapshot ds :  dataSnapshot.getChildren()){
+                    Map<String, Object> map = (Map<String, Object>)ds.getValue();
+                    Object total = map.get("amount");
+                    int pTotal = Integer.parseInt(String.valueOf(total));
+                    totalAmount+=pTotal;
+                    todayTv.setText("$ "+ totalAmount);
+                }
+                personalRef.child("today").setValue(totalAmount);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(MainActivity.this, databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    private void getWeekSpentAmount() {
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        DateTime now = new DateTime();
+        Weeks weeks = Weeks.weeksBetween(epoch, now);
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserID);
+        Query query = reference.orderByChild("week").equalTo(weeks.getWeeks());
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                int totalAmount = 0;
+                for (DataSnapshot ds :  dataSnapshot.getChildren()){
+                    Map<String, Object> map = (Map<String, Object>)ds.getValue();
+                    Object total = map.get("amount");
+                    int pTotal = Integer.parseInt(String.valueOf(total));
+                    totalAmount+=pTotal;
+                    weekTv.setText("$ "+ totalAmount);
+                }
+                personalRef.child("week").setValue(totalAmount);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -318,5 +323,10 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
     }
 }

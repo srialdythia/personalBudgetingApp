@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -48,7 +49,7 @@ public class HistoryActivity extends AppCompatActivity implements DatePickerDial
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
 
-        settingsToolbar = findViewById(R.id.my_Feed_Toolbar);
+        settingsToolbar = findViewById(R.id.history_Toolbar);
         setSupportActionBar(settingsToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -75,7 +76,6 @@ public class HistoryActivity extends AppCompatActivity implements DatePickerDial
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 showDatePickerDialog();
             }
         });
@@ -117,21 +117,27 @@ public class HistoryActivity extends AppCompatActivity implements DatePickerDial
                     Data data = snapshot.getValue(Data.class);
                     myDataList.add(data);
                 }
+                Log.d("size",String.valueOf(myDataList.size()));
                 todayItemsAdapter.notifyDataSetChanged();
                 recyclerView.setVisibility(View.VISIBLE);
-
-                int totalAmount = 0;
-                for (DataSnapshot ds :  dataSnapshot.getChildren()){
-                    Map<String, Object> map = (Map<String, Object>)ds.getValue();
-                    Object total = map.get("amount");
-                    int pTotal = Integer.parseInt(String.valueOf(total));
-                    totalAmount+=pTotal;
-                    if (totalAmount >0){
-                        historyTotalAmountSpent.setVisibility(View.VISIBLE);
-                        historyTotalAmountSpent.setText("This day you spent $: "+ totalAmount);
+                if(myDataList.size() > 0){
+                    int totalAmount = 0;
+                    for (DataSnapshot ds :  dataSnapshot.getChildren()){
+                        Map<String, Object> map = (Map<String, Object>)ds.getValue();
+                        Object total = map.get("amount");
+                        int pTotal = Integer.parseInt(String.valueOf(total));
+                        totalAmount+=pTotal;
+                        if (totalAmount >0){
+                            historyTotalAmountSpent.setVisibility(View.VISIBLE);
+                            historyTotalAmountSpent.setText("This day you spent $: "+ totalAmount);
+                        }
                     }
-
+                } else {
+                    historyTotalAmountSpent.setVisibility(View.VISIBLE);
+                    historyTotalAmountSpent.setText("This day you spent $: "+ 0);
                 }
+
+
             }
 
             @Override

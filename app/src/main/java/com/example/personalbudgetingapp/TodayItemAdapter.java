@@ -39,6 +39,10 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
     private String item = "";
     private String note = "";
     private int amount = 0;
+    private String itemDate = "";
+    private String sDay, sMonth, sYear;
+
+    private DateTime specificDateSelected;
 
     public TodayItemAdapter(Context mContext, List<Data> myDataList) {
         this.mContext = mContext;
@@ -52,7 +56,7 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
         return new TodayItemAdapter.ViewHolder(view);
     }
 
-//    Set the value to View Holder
+//    Set the value to ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final Data data = myDataList.get(position);
@@ -90,6 +94,8 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
             case "Other":
                 holder.imageView.setImageResource(R.drawable.ic_other);
                 break;
+            case "Health":
+                holder.imageView.setImageResource(R.drawable.ic_health);
         }
 
         holder.itemView.setOnClickListener(new View.OnClickListener(){
@@ -99,6 +105,7 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
                 item = data.getItem();
                 amount = data.getAmount();
                 note = data.getNotes();
+                itemDate = data.getDate();
                 updateData();
             }
         });
@@ -117,6 +124,14 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
         final TextView mItem = mView.findViewById(R.id.itemName);
         final EditText mAmount = mView.findViewById(R.id.amount);
         final EditText mNotes = mView.findViewById(R.id.note);
+        final TextView mPeriode = mView.findViewById(R.id.tvPeriode);
+        String[] arr = itemDate.split("-");
+        sDay = arr[0];
+        sMonth = arr[1];
+        sYear = arr[2];
+
+        mPeriode.setText("Periode: " + itemDate);
+        mPeriode.setVisibility(View.VISIBLE);
 
         mItem.setText(item);
 
@@ -136,21 +151,35 @@ public class TodayItemAdapter extends RecyclerView.Adapter<TodayItemAdapter.View
                 note = mNotes.getText().toString();
 
 
-                DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                Calendar cal = Calendar.getInstance();
-                String date = dateFormat.format(cal.getTime());
+                specificDateSelected = new DateTime(sYear+"-"+sMonth+"-"+sDay);
+                String date = sDay+"-"+sMonth+"-"+sYear;
 
                 MutableDateTime epoch = new MutableDateTime();
                 epoch.setDate(0);
-                DateTime now = new DateTime();
-                Weeks weeks = Weeks.weeksBetween(epoch,now);
-                Months months = Months.monthsBetween(epoch,now);
 
-                String itemDay = item+date;
-                String itemWeek = item+weeks.getWeeks();
-                String itemMonth = item+months.getMonths();
+                Months months = Months.monthsBetween(epoch,specificDateSelected);
+                Weeks weeks = Weeks.weeksBetween(epoch,specificDateSelected);
 
-                Data data = new Data(item, date, post_key, itemDay, itemWeek, itemMonth, amount,months.getMonths(),weeks.getWeeks(),note);
+                String itemDay = "";
+                String itemWeek = "";
+                String itemMonth = "";
+                Integer getMonth ,getWeek;
+
+                if(sDay.equals("1")){
+                    itemDay = item+date;
+                    itemWeek = item+(weeks.getWeeks()+1);
+                    itemMonth = item+(months.getMonths()+1);
+                    getMonth = months.getMonths()+1;
+                    getWeek = weeks.getWeeks()+1;
+                } else {
+                    itemDay = item+date;
+                    itemWeek = item+weeks.getWeeks();
+                    itemMonth = item+months.getMonths();
+                    getMonth = months.getMonths();
+                    getWeek = weeks.getWeeks();
+                }
+
+                Data data = new Data(item, date, post_key, itemDay, itemWeek, itemMonth, amount,getMonth,getWeek,note);
 
                 DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(FirebaseAuth.getInstance().getCurrentUser().getUid());
                 reference.child(post_key).setValue(data).addOnCompleteListener(new OnCompleteListener<Void>() {

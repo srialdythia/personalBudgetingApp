@@ -1,6 +1,7 @@
 package com.example.personalbudgetingapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import android.content.Intent;
@@ -11,8 +12,7 @@ public class ChooseAnalyticActivity extends AppCompatActivity {
     private CardView todayCardView;
     private CardView weekCardView;
     private CardView monthCardView;
-
-
+    private Toolbar settingsToolbar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,6 +21,13 @@ public class ChooseAnalyticActivity extends AppCompatActivity {
         todayCardView = findViewById(R.id.todayCardView);
         weekCardView = findViewById(R.id.weekCardView);
         monthCardView = findViewById(R.id.monthCardView);
+
+        settingsToolbar = findViewById(R.id.choose_toolbar);
+        setSupportActionBar(settingsToolbar);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setTitle("Analytics");
 
 
         todayCardView.setOnClickListener(new View.OnClickListener(){

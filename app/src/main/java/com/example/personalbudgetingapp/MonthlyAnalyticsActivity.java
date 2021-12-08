@@ -6,8 +6,10 @@ import androidx.appcompat.widget.Toolbar;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +20,8 @@ import com.anychart.chart.common.dataentry.ValueDataEntry;
 import com.anychart.charts.Pie;
 import com.anychart.enums.Align;
 import com.anychart.enums.LegendLayout;
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialog;
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -30,7 +34,9 @@ import org.joda.time.DateTime;
 import org.joda.time.Months;
 import org.joda.time.MutableDateTime;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +57,15 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
     private AnyChartView anyChartView;
     private TextView progress_ratio_transport,progress_ratio_food,progress_ratio_house,progress_ratio_ent,progress_ratio_edu,progress_ratio_cha, progress_ratio_app,progress_ratio_hea,progress_ratio_per,progress_ratio_oth, monthRatioSpending;
     private ImageView status_Image_transport, status_Image_food,status_Image_house,status_Image_ent,status_Image_edu,status_Image_cha,status_Image_app,status_Image_hea,status_Image_per,status_Image_oth, monthRatioSpending_Image;
+    private Button btnSelectMonth;
+    private ScrollView scrollView;
 
+    private String ySelected, mSelected;
+    private DateTime specificDateSelected;
+
+    private DatabaseReference budgetRef;
+
+    DecimalFormat df = new DecimalFormat("#.#");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,12 +75,14 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
         setSupportActionBar(settingsToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setTitle("This Month Analytics");
+        getSupportActionBar().setTitle("Month Analytics");
 
         mAuth = FirebaseAuth.getInstance();
         onlineUserId = mAuth.getCurrentUser().getUid();
         expensesRef = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserId);
         personalRef = FirebaseDatabase.getInstance().getReference("personal").child(onlineUserId);
+        budgetRef = FirebaseDatabase.getInstance().getReference().child("budget").child(onlineUserId);
+
 
         totalBudgetAmountTextView = findViewById(R.id.totalBudgetAmountTextView);
 
@@ -122,38 +138,86 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
         status_Image_hea = findViewById(R.id.healthStatus);
         status_Image_per = findViewById(R.id.personalStatus);
         status_Image_oth = findViewById(R.id.otherStatus);
+        scrollView = findViewById(R.id.scrollView);
 
         //anyChartView
         anyChartView = findViewById(R.id.anyChartView);
 
-        getTotalWeekTransportExpense();
-        getTotalMonthsFoodExpense();
-        getTotalMonthsHouseExpense();
-        getTotalMonthEntertainmentExpenses();
-        getTotalWeekEducationExpenses();
-        getTotalWeekCharityExpenses();
-        getTotalWeekApparelExpenses();
-        getTotalWeekHealthExpenses();
-        getTotalWeekPersonalExpenses();
-        getTotalWeekOtherExpenses();
-        getTotalWeekSpending();
+        btnSelectMonth = findViewById(R.id.btnSearchMonth);
 
-        new java.util.Timer().schedule(
-                new java.util.TimerTask() {
+        btnSelectMonth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int yearSelected;
+                int monthSelected;
+
+                //Set default values
+                Calendar calendar = Calendar.getInstance();
+                yearSelected = calendar.get(Calendar.YEAR);
+                monthSelected = calendar.get(Calendar.MONTH);
+
+                MonthYearPickerDialogFragment dialogFragment = MonthYearPickerDialogFragment
+                        .getInstance(monthSelected, yearSelected);
+
+                dialogFragment.show(getSupportFragmentManager(), null);
+                dialogFragment.setOnDateSetListener(new MonthYearPickerDialog.OnDateSetListener() {
                     @Override
-                    public void run() {
-                        loadGraph();
-                        setStatusAndImageResource();
+                    public void onDateSet(int year, int monthOfYear) {
+                        scrollView.setVisibility(View.VISIBLE);
+
+                        // do something
+                        ySelected = String.valueOf(year);
+                        mSelected = String.valueOf(monthOfYear+1);
+                        specificDateSelected = new DateTime(ySelected+"-"+mSelected+"-"+"2");
+                        Toast.makeText(getApplicationContext(), specificDateSelected.toString(), Toast.LENGTH_SHORT).show();
+
+                        TextView tvPeriode = findViewById(R.id.tvPeriode);
+
+                        tvPeriode.setText("Periode: " + mSelected + "/" + ySelected);
+                        getTotalMonthsTransportExpense();
+                        getTotalMonthsFoodExpense();
+                        getTotalMonthsHouseExpense();
+                        getTotalMonthsEntertainmentExpenses();
+                        getTotalMonthsEducationExpenses();
+                        getTotalMonthsCharityExpenses();
+                        getTotalMonthsApparelExpenses();
+                        getTotalMonthsHealthExpenses();
+                        getTotalMonthsPersonalExpenses();
+                        getTotalMonthsOtherExpenses();
+                        getTotalMonthsSpending();
+
+                        getMonthTransportBudgetRatios();
+                        getMonthFoodBudgetRatios();
+                        getMonthHouseBudgetRatios();
+                        getMonthEntBudgetRatios();
+                        getMonthEduBudgetRatios();
+                        getMonthCharityBudgetRatios();
+                        getMonthAppBudgetRatios();
+                        getMonthHealthBudgetRatios();
+                        getMonthPerBudgetRatios();
+                        getMonthOtherBudgetRatios();
+
+                        new java.util.Timer().schedule(
+                                new java.util.TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        loadGraph();
+                                        setStatusAndImageResource();
+                                    }
+                                },
+                                2000
+                        );
+
                     }
-                },
-                2000
-        );
+                });
+            }
+        });
+
     }
-    private void getTotalWeekTransportExpense() {
+    private void getTotalMonthsTransportExpense() {
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Transport"+months.getMonths();
 
@@ -169,14 +233,16 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsTransportAmount.setText("Spent: " + totalAmount);
+                        analyticsTransportAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthTrans").setValue(totalAmount);
+
 
                 }
                 else {
                     linearLayoutTransport.setVisibility(View.GONE);
                     personalRef.child("monthTrans").setValue(0);
+
                 }
 
             }
@@ -191,8 +257,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
     private void getTotalMonthsFoodExpense(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Food"+months.getMonths();
 
@@ -208,7 +273,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsFoodAmount.setText("Spent: " + totalAmount);
+                        analyticsFoodAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthFood").setValue(totalAmount);
                 }else {
@@ -227,8 +292,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
     private void getTotalMonthsHouseExpense(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "House"+months.getMonths();
 
@@ -244,7 +308,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsHouseExpensesAmount.setText("Spent: " + totalAmount);
+                        analyticsHouseExpensesAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthHouse").setValue(totalAmount);
                 }else {
@@ -260,11 +324,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalMonthEntertainmentExpenses(){
+    private void getTotalMonthsEntertainmentExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Entertainment"+months.getMonths();
 
@@ -280,7 +343,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsEntertainmentAmount.setText("Spent: " + totalAmount);
+                        analyticsEntertainmentAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthEnt").setValue(totalAmount);
                 }else {
@@ -296,11 +359,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekEducationExpenses(){
+    private void getTotalMonthsEducationExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Education"+months.getMonths();
 
@@ -316,7 +378,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsEducationAmount.setText("Spent: " + totalAmount);
+                        analyticsEducationAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthEdu").setValue(totalAmount);
                 }else {
@@ -332,11 +394,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekCharityExpenses(){
+    private void getTotalMonthsCharityExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Charity"+months.getMonths();
 
@@ -352,7 +413,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsCharityAmount.setText("Spent: " + totalAmount);
+                        analyticsCharityAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthChar").setValue(totalAmount);
                 }else {
@@ -368,11 +429,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekApparelExpenses(){
+    private void getTotalMonthsApparelExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Apparel"+months.getMonths();
 
@@ -388,7 +448,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsApparelAmount.setText("Spent: " + totalAmount);
+                        analyticsApparelAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthApp").setValue(totalAmount);
                 }else {
@@ -404,11 +464,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekHealthExpenses(){
+    private void getTotalMonthsHealthExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Health"+months.getMonths();
 
@@ -424,7 +483,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsHealthAmount.setText("Spent: " + totalAmount);
+                        analyticsHealthAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthHea").setValue(totalAmount);
                 }else {
@@ -440,11 +499,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekPersonalExpenses(){
+    private void getTotalMonthsPersonalExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Personal"+months.getMonths();
 
@@ -460,7 +518,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsPersonalExpensesAmount.setText("Spent: " + totalAmount);
+                        analyticsPersonalExpensesAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthPer").setValue(totalAmount);
                 }else {
@@ -476,11 +534,10 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekOtherExpenses(){
+    private void getTotalMonthsOtherExpenses(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
 
         String itemMonth = "Other"+months.getMonths();
 
@@ -496,7 +553,7 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         Object total = map.get("amount");
                         int pTotal = Integer.parseInt(String.valueOf(total));
                         totalAmount += pTotal;
-                        analyticsOtherAmount.setText("Spent: " + totalAmount);
+                        analyticsOtherAmount.setText("Spent: $" + totalAmount);
                     }
                     personalRef.child("monthOther").setValue(totalAmount);
                 }else {
@@ -512,11 +569,11 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
             }
         });
     }
-    private void getTotalWeekSpending(){
+    private void getTotalMonthsSpending(){
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0); //Set to Epoch time
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch, now);
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+        final RelativeLayout rvSummary = findViewById(R.id.rvSummary);
 
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserId);
         Query query = reference.orderByChild("month").equalTo(months.getMonths());
@@ -533,15 +590,431 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
                         totalAmount+=pTotal;
 
                     }
+
+                    rvSummary.setVisibility(View.VISIBLE);
                     totalBudgetAmountTextView.setText("Total Months's spending: $ "+ totalAmount);
                     monthSpentAmount.setText("Total Spent: $ "+totalAmount);
                 }else {
+                    totalBudgetAmountTextView.setText("Total Months's spending: $ "+ 0);
                     anyChartView.setVisibility(View.GONE);
+                    rvSummary.setVisibility(View.GONE);
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void getMonthTransportBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Transport"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayTransRatio = pTotal/30;
+                    int weekTransRatio = pTotal/4;
+                    int monthTransRatio = pTotal;
+
+                    personalRef.child("dayTransRatio").setValue(dayTransRatio);
+                    personalRef.child("weekTransRatio").setValue(weekTransRatio);
+                    personalRef.child("monthTransRatio").setValue(monthTransRatio);
+
+                }else {
+                    personalRef.child("dayTransRatio").setValue(0);
+                    personalRef.child("weekTransRatio").setValue(0);
+                    personalRef.child("monthTransRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthFoodBudgetRatios() {
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Food"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayFoodRatio = pTotal/30;
+                    int weekFoodRatio = pTotal/4;
+                    int monthFoodRatio = pTotal;
+
+                    personalRef.child("dayFoodRatio").setValue(dayFoodRatio);
+                    personalRef.child("weekFoodRatio").setValue(weekFoodRatio);
+                    personalRef.child("monthFoodRatio").setValue(monthFoodRatio);
+
+                }else {
+                    personalRef.child("dayFoodRatio").setValue(0);
+                    personalRef.child("weekFoodRatio").setValue(0);
+                    personalRef.child("monthFoodRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthHouseBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "House"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayHouseRatio = pTotal/30;
+                    int weekHouseRatio = pTotal/4;
+                    int monthHouseRatio = pTotal;
+
+                    personalRef.child("dayHouseRatio").setValue(dayHouseRatio);
+                    personalRef.child("weekHouseRatio").setValue(weekHouseRatio);
+                    personalRef.child("monthHouseRatio").setValue(monthHouseRatio);
+
+                }else {
+                    personalRef.child("dayHouseRatio").setValue(0);
+                    personalRef.child("weekHouseRatio").setValue(0);
+                    personalRef.child("monthHouseRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthEntBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Entertainment"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayEntRatio = pTotal/30;
+                    int weekEntRatio = pTotal/4;
+                    int monthEntRatio = pTotal;
+
+                    personalRef.child("dayEntRatio").setValue(dayEntRatio);
+                    personalRef.child("weekEntRatio").setValue(weekEntRatio);
+                    personalRef.child("monthEntRatio").setValue(monthEntRatio);
+
+                }else {
+                    personalRef.child("dayEntRatio").setValue(0);
+                    personalRef.child("weekEntRatio").setValue(0);
+                    personalRef.child("monthEntRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthEduBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Education"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayEduRatio = pTotal/30;
+                    int weekEduRatio = pTotal/4;
+                    int monthEduRatio = pTotal;
+
+                    personalRef.child("dayEduRatio").setValue(dayEduRatio);
+                    personalRef.child("weekEduRatio").setValue(weekEduRatio);
+                    personalRef.child("monthEduRatio").setValue(monthEduRatio);
+
+                }else {
+                    personalRef.child("dayEduRatio").setValue(0);
+                    personalRef.child("weekEduRatio").setValue(0);
+                    personalRef.child("monthEduRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthCharityBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Charity"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayCharRatio = pTotal/30;
+                    int weekCharRatio = pTotal/4;
+                    int monthCharRatio = pTotal;
+
+                    personalRef.child("dayCharRatio").setValue(dayCharRatio);
+                    personalRef.child("weekCharRatio").setValue(weekCharRatio);
+                    personalRef.child("monthCharRatio").setValue(monthCharRatio);
+
+                }else {
+                    personalRef.child("dayCharRatio").setValue(0);
+                    personalRef.child("weekCharRatio").setValue(0);
+                    personalRef.child("monthCharRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthAppBudgetRatios() {
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Apparel"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayAppRatio = pTotal/30;
+                    int weekAppRatio = pTotal/4;
+                    int monthAppRatio = pTotal;
+
+                    personalRef.child("dayAppRatio").setValue(dayAppRatio);
+                    personalRef.child("weekAppRatio").setValue(weekAppRatio);
+                    personalRef.child("monthAppRatio").setValue(monthAppRatio);
+
+                }else {
+                    personalRef.child("dayAppRatio").setValue(0);
+                    personalRef.child("weekAppRatio").setValue(0);
+                    personalRef.child("monthAppRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthHealthBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Health"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayHealthRatio = pTotal/30;
+                    int weekHealthRatio = pTotal/4;
+                    int monthHealthRatio = pTotal;
+
+                    personalRef.child("dayHealthRatio").setValue(dayHealthRatio);
+                    personalRef.child("weekHealthRatio").setValue(weekHealthRatio);
+                    personalRef.child("monthHealthRatio").setValue(monthHealthRatio);
+
+                }else {
+                    personalRef.child("dayHealthRatio").setValue(0);
+                    personalRef.child("weekHealthRatio").setValue(0);
+                    personalRef.child("monthHealthRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthPerBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Personal"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayPerRatio = pTotal/30;
+                    int weekPerRatio = pTotal/4;
+                    int monthPerRatio = pTotal;
+
+                    personalRef.child("dayPerRatio").setValue(dayPerRatio);
+                    personalRef.child("weekPerRatio").setValue(weekPerRatio);
+                    personalRef.child("monthPerRatio").setValue(monthPerRatio);
+
+                }else {
+                    personalRef.child("dayPerRatio").setValue(0);
+                    personalRef.child("weekPerRatio").setValue(0);
+                    personalRef.child("monthPerRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void getMonthOtherBudgetRatios(){
+        MutableDateTime epoch = new MutableDateTime();
+        epoch.setDate(0); //Set to Epoch time
+        Months months = Months.monthsBetween(epoch, specificDateSelected);
+
+        String itemMonth = "Other"+months.getMonths();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("budget").child(onlineUserId);
+        Query query = reference.orderByChild("itemMonth").equalTo(itemMonth);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()){
+                    int pTotal = 0;
+                    for (DataSnapshot ds :  snapshot.getChildren()) {
+                        Map<String, Object> map = (Map<String, Object>) ds.getValue();
+                        Object total = map.get("amount");
+                        pTotal = Integer.parseInt(String.valueOf(total));
+                    }
+
+                    int dayOtherRatio = pTotal/30;
+                    int weekOtherRatio = pTotal/4;
+                    int monthOtherRatio = pTotal;
+
+                    personalRef.child("dayOtherRatio").setValue(dayOtherRatio);
+                    personalRef.child("weekOtherRatio").setValue(weekOtherRatio);
+                    personalRef.child("monthOtherRatio").setValue(monthOtherRatio);
+
+                }else {
+                    personalRef.child("dayOtherRatio").setValue(0);
+                    personalRef.child("weekOtherRatio").setValue(0);
+                    personalRef.child("monthOtherRatio").setValue(0);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
 
             }
         });
@@ -829,13 +1302,13 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
 
                     float monthPercent = (monthTotalSpentAmount/monthTotalSpentAmountRatio)*100;
                     if (monthPercent<50){
-                        monthRatioSpending.setText(monthPercent+" %" +" used of "+monthTotalSpentAmountRatio + ". Status:");
+                        monthRatioSpending.setText(df.format(monthPercent)+" %" +" used of $"+df.format(monthTotalSpentAmountRatio) + ". \nStatus:");
                         monthRatioSpending_Image.setImageResource(R.drawable.green);
                     }else if (monthPercent >= 50 && monthPercent <100){
-                        monthRatioSpending.setText(monthPercent+" %" +" used of "+monthTotalSpentAmountRatio + ". Status:");
+                        monthRatioSpending.setText(df.format(monthPercent)+" %" +" used of $"+df.format(monthTotalSpentAmountRatio) + ". \nStatus:");
                         monthRatioSpending_Image.setImageResource(R.drawable.brown);
                     }else {
-                        monthRatioSpending.setText(monthPercent+" %" +" used of "+monthTotalSpentAmountRatio + ". Status:");
+                        monthRatioSpending.setText(df.format(monthPercent)+" %" +" used of $"+df.format(monthTotalSpentAmountRatio) + ". \nStatus:");
                         monthRatioSpending_Image.setImageResource(R.drawable.red);
 
                     }
@@ -843,106 +1316,106 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
 
                     float transportPercent = (traTotal/traRatio)*100;
                     if (transportPercent<50){
-                        progress_ratio_transport.setText(transportPercent+" %" +" used of "+traRatio + ". Status:");
+                        progress_ratio_transport.setText(df.format(transportPercent)+" %" +" used of $"+df.format(traRatio) + ". \nStatus:");
                         status_Image_transport.setImageResource(R.drawable.green);
                     }else if (transportPercent >= 50 && transportPercent <100){
-                        progress_ratio_transport.setText(transportPercent+" %" +" used of "+traRatio + ". Status:");
+                        progress_ratio_transport.setText(df.format(transportPercent)+" %" +" used of $"+df.format(traRatio) + ". \nStatus:");
                         status_Image_transport.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_transport.setText(transportPercent+" %" +" used of "+traRatio + ". Status:");
+                        progress_ratio_transport.setText(df.format(transportPercent)+" %" +" used of $"+df.format(traRatio) + ". \nStatus:");
                         status_Image_transport.setImageResource(R.drawable.red);
 
                     }
 
                     float foodPercent = (foodTotal/foodRatio)*100;
                     if (foodPercent<50){
-                        progress_ratio_food.setText(foodPercent+" %" +" used of "+foodRatio + ". Status:");
+                        progress_ratio_food.setText(df.format(foodPercent)+" %" +" used of $"+df.format(foodRatio) + ". \nStatus:");
                         status_Image_food.setImageResource(R.drawable.green);
                     }else if (foodPercent >= 50 && foodPercent <100){
-                        progress_ratio_food.setText(foodPercent+" %" +" used of "+foodRatio + ". Status:");
+                        progress_ratio_food.setText(df.format(foodPercent)+" %" +" used of $"+df.format(foodRatio) + ". \nStatus:");
                         status_Image_food.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_food.setText(foodPercent+" %" +" used of "+foodRatio + ". Status:");
+                        progress_ratio_food.setText(df.format(foodPercent)+" %" +" used of $"+df.format(foodRatio) + ". \nStatus:");
                         status_Image_food.setImageResource(R.drawable.red);
 
                     }
 
                     float housePercent = (houseTotal/houseRatio)*100;
                     if (housePercent<50){
-                        progress_ratio_house.setText(housePercent+" %" +" used of "+houseRatio + ". Status:");
+                        progress_ratio_house.setText(df.format(housePercent)+" %" +" used of $"+df.format(houseRatio) + ". \nStatus:");
                         status_Image_house.setImageResource(R.drawable.green);
                     }else if (housePercent >= 50 && housePercent <100){
-                        progress_ratio_house.setText(housePercent+" %" +" used of "+houseRatio + ". Status:");
+                        progress_ratio_house.setText(df.format(housePercent)+" %" +" used of "+df.format(houseRatio) + ". \nStatus:");
                         status_Image_house.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_house.setText(housePercent+" %" +" used of "+houseRatio + ". Status:");
+                        progress_ratio_house.setText(df.format(housePercent)+" %" +" used of "+df.format(houseRatio) + ". \nStatus:");
                         status_Image_house.setImageResource(R.drawable.red);
 
                     }
 
                     float entPercent = (entTotal/entRatio)*100;
                     if (entPercent<50){
-                        progress_ratio_ent.setText(entPercent+" %" +" used of "+entRatio + ". Status:");
+                        progress_ratio_ent.setText(df.format(entPercent)+" %" +" used of $"+df.format(entRatio) + ". \nStatus:");
                         status_Image_ent.setImageResource(R.drawable.green);
                     }else if (entPercent >= 50 && entPercent <100){
-                        progress_ratio_ent.setText(entPercent+" %" +" used of "+entRatio + ". Status:");
+                        progress_ratio_ent.setText(df.format(entPercent)+" %" +" used of $"+df.format(entRatio) + ". \nStatus:");
                         status_Image_ent.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_ent.setText(entPercent+" %" +" used of "+entRatio + ". Status:");
+                        progress_ratio_ent.setText(df.format(entPercent)+" %" +" used of $"+df.format(entRatio) + ". \nStatus:");
                         status_Image_ent.setImageResource(R.drawable.red);
 
                     }
 
                     float eduPercent = (eduTotal/eduRatio)*100;
                     if (eduPercent<50){
-                        progress_ratio_edu.setText(eduPercent+" %" +" used of "+eduRatio + ". Status:");
+                        progress_ratio_edu.setText(df.format(eduPercent)+" %" +" used of $"+df.format(eduRatio) + ". \nStatus:");
                         status_Image_edu.setImageResource(R.drawable.green);
                     }
                     else if (eduPercent >= 50 && eduPercent <100){
-                        progress_ratio_edu.setText(eduPercent+" %" +" used of "+eduRatio + ". Status:");
+                        progress_ratio_edu.setText(df.format(eduPercent)+" %" +" used of $"+df.format(eduRatio) + ". \nStatus:");
                         status_Image_edu.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_edu.setText(eduPercent+" %" +" used of "+eduRatio + ". Status:");
+                        progress_ratio_edu.setText(df.format(eduPercent)+" %" +" used of $"+df.format(eduRatio) + ". \nStatus:");
                         status_Image_edu.setImageResource(R.drawable.red);
 
                     }
 
                     float chaPercent = (chaTotal/chaRatio)*100;
                     if (chaPercent<50){
-                        progress_ratio_cha.setText(chaPercent+" %" +" used of "+chaRatio + ". Status:");
+                        progress_ratio_cha.setText(df.format(chaPercent)+" %" +" used of $"+df.format(chaRatio) + ". \nStatus:");
                         status_Image_cha.setImageResource(R.drawable.green);
                     }else if (chaPercent >= 50 && chaPercent <100){
-                        progress_ratio_cha.setText(chaPercent+" %" +" used of "+chaRatio + ". Status:");
+                        progress_ratio_cha.setText(df.format(chaPercent)+" %" +" used of $"+df.format(chaRatio) + ". \nStatus:");
                         status_Image_cha.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_cha.setText(chaPercent+" %" +" used of "+chaRatio + ". Status:");
+                        progress_ratio_cha.setText(df.format(chaPercent)+" %" +" used of $"+df.format(chaRatio) + ". \nStatus:");
                         status_Image_cha.setImageResource(R.drawable.red);
 
                     }
 
                     float appPercent = (appTotal/appRatio)*100;
                     if (appPercent<50){
-                        progress_ratio_app.setText(appPercent+" %" +" used of "+appRatio + ". Status:");
+                        progress_ratio_app.setText(df.format(appPercent)+" %" +" used of $"+df.format(appRatio) + ". \nStatus:");
                         status_Image_app.setImageResource(R.drawable.green);
                     }else if (appPercent >= 50 && appPercent <100){
-                        progress_ratio_app.setText(appPercent+" %" +" used of "+appRatio + ". Status:");
+                        progress_ratio_app.setText(df.format(appPercent)+" %" +" used of $"+df.format(appRatio) + ". \nStatus:");
                         status_Image_app.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_app.setText(appPercent+" %" +" used of "+appRatio + ". Status:");
+                        progress_ratio_app.setText(df.format(appPercent)+" %" +" used of $"+df.format(appRatio) + ". \nStatus:");
                         status_Image_app.setImageResource(R.drawable.red);
 
                     }
 
                     float heaPercent = (heaTotal/heaRatio)*100;
                     if (heaPercent<50){
-                        progress_ratio_hea.setText(heaPercent+" %" +" used of "+heaRatio + ". Status:");
+                        progress_ratio_hea.setText(df.format(heaPercent)+" %" +" used of $"+df.format(heaRatio) + ". \nStatus:");
                         status_Image_hea.setImageResource(R.drawable.green);
                     }
                     else if (heaPercent >= 50 && heaPercent <100){
-                        progress_ratio_hea.setText(heaPercent+" %" +" used of "+heaRatio + ". Status:");
+                        progress_ratio_hea.setText(df.format(heaPercent)+" %" +" used of $"+df.format(heaRatio) + ". \nStatus:");
                         status_Image_hea.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_hea.setText(heaPercent+" %" +" used of "+heaRatio + ". Status:");
+                        progress_ratio_hea.setText(df.format(heaPercent)+" %" +" used of $"+df.format(heaRatio) + ". \nStatus:");
                         status_Image_hea.setImageResource(R.drawable.red);
 
                     }
@@ -950,28 +1423,28 @@ public class MonthlyAnalyticsActivity extends AppCompatActivity {
 
                     float perPercent = (perTotal/perRatio)*100;
                     if (perPercent<50){
-                        progress_ratio_per.setText(perPercent+" %" +" used of "+perRatio + " . Status:");
+                        progress_ratio_per.setText(df.format(perPercent)+" %" +" used of $"+df.format(perRatio) + " . \nStatus:");
                         status_Image_per.setImageResource(R.drawable.green);
                     }else if (perPercent >= 50 && perPercent <100){
-                        progress_ratio_per.setText(perPercent+" %" +" used of "+perRatio + " . Status:");
+                        progress_ratio_per.setText(df.format(perPercent)+" %" +" used of $"+df.format(perRatio) + " . \nStatus:");
                         status_Image_per.setImageResource(R.drawable.brown);
                     }
                     else {
-                        progress_ratio_per.setText(perPercent+" %" +" used of "+perRatio + " . Status:");
+                        progress_ratio_per.setText(df.format(perPercent)+" %" +" used of $"+df.format(perRatio) + " . \nStatus:");
                         status_Image_per.setImageResource(R.drawable.red);
                     }
 
 
                     float otherPercent = (othTotal/othRatio)*100;
                     if (otherPercent<50){
-                        progress_ratio_oth.setText(otherPercent+" %" +" used of "+othRatio + ". Status:");
+                        progress_ratio_oth.setText(df.format(otherPercent)+" %" +" used of "+df.format(othRatio) + ". \nStatus:");
                         status_Image_oth.setImageResource(R.drawable.green);
                     }
                     else if (otherPercent >= 50 && otherPercent <100){
-                        progress_ratio_oth.setText(otherPercent+" %" +" used of "+othRatio + ". Status:");
+                        progress_ratio_oth.setText(df.format(otherPercent)+" %" +" used of "+df.format(othRatio) + ". \nStatus:");
                         status_Image_oth.setImageResource(R.drawable.brown);
                     }else {
-                        progress_ratio_oth.setText(otherPercent+" %" +" used of "+othRatio + ". Status:");
+                        progress_ratio_oth.setText(df.format(otherPercent)+" %" +" used of "+df.format(othRatio) + ". \nStatus:");
                         status_Image_oth.setImageResource(R.drawable.red);
 
                     }

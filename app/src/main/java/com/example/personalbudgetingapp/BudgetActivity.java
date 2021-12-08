@@ -3,16 +3,20 @@ package com.example.personalbudgetingapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -21,6 +25,8 @@ import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialog;
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialogFragment;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -54,10 +60,17 @@ public class BudgetActivity extends AppCompatActivity {
     private DatabaseReference budgetRef, personalRef;
     private FirebaseAuth mAuth;
     private ProgressDialog loader;
+    private Toolbar settingToolbar;
 
     private String post_key = "";
     private String item = "";
     private int amount = 0;
+
+    private Button btnSMonth;
+
+    private String ySelected, mSelected;
+
+    private DateTime specificDateSelected;
 
 
     @Override
@@ -72,6 +85,13 @@ public class BudgetActivity extends AppCompatActivity {
 
         totalBudgetAmountTv = findViewById(R.id.totalBudgetAmountTv);
         recyclerView = findViewById(R.id.recyclerView);
+        settingToolbar = findViewById(R.id.toolbar);
+        btnSMonth = findViewById(R.id.btn_sMonth);
+        setSupportActionBar(settingToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setTitle("Monthly Budget");
+
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setReverseLayout(true);
@@ -79,23 +99,55 @@ public class BudgetActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        budgetRef.addValueEventListener(new ValueEventListener() {
+        btnSMonth.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                int totalAmount = 0;
-                for(DataSnapshot snap: snapshot.getChildren()){
-                    Data data = snap.getValue(Data.class);
-                    totalAmount += data.getAmount();
-                }
-                String sTotal = String.valueOf("Month budget: $" + totalAmount);
-                totalBudgetAmountTv.setText(sTotal);
-            }
+            public void onClick(View view) {
+                int yearSelected;
+                int monthSelected;
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                //Set default values
+                Calendar calendar = Calendar.getInstance();
+                yearSelected = calendar.get(Calendar.YEAR);
+                monthSelected = calendar.get(Calendar.MONTH);
+
+                MonthYearPickerDialogFragment dialogFragment = MonthYearPickerDialogFragment
+                        .getInstance(monthSelected, yearSelected);
+
+                dialogFragment.show(getSupportFragmentManager(), null);
+
+                dialogFragment.setOnDateSetListener(new MonthYearPickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(int year, int monthOfYear) {
+                        // do something
+                        Toast.makeText(getApplicationContext(), ""+year + "" + monthOfYear, Toast.LENGTH_SHORT).show();
+                        ySelected = String.valueOf(year);
+                        mSelected = String.valueOf(monthOfYear+1);
+                        specificDateSelected = new DateTime(ySelected+"-"+mSelected+"-"+"2");
+                        TextView tvPeriode = findViewById(R.id.tv_periode);
+
+                        tvPeriode.setText("Periode: " + mSelected + "/" + ySelected);
+                        displayData();
+                        showMonthBudget();
+
+                        getMonthTransportBudgetRatios();
+                        getMonthFoodBudgetRatios();
+                        getMonthHouseBudgetRatios();
+                        getMonthEntBudgetRatios();
+                        getMonthEduBudgetRatios();
+                        getMonthCharityBudgetRatios();
+                        getMonthAppBudgetRatios();
+                        getMonthHealthBudgetRatios();
+                        getMonthPerBudgetRatios();
+                        getMonthOtherBudgetRatios();
+
+                    }
+                });
 
             }
         });
+
+//        Tampilin month budget
+        showMonthBudget();
 
         fab = findViewById(R.id.fab);
 
@@ -106,20 +158,24 @@ public class BudgetActivity extends AppCompatActivity {
             }
         });
 
-        budgetRef.addValueEventListener(new ValueEventListener() {
+    } // end OnCreate
+
+    private void showMonthBudget() {
+        budgetRef.orderByChild("date").equalTo("2-"+mSelected+"-"+ySelected).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Log.d("snapshotexists",String.valueOf(snapshot.exists()));
+                Log.d("children",snapshot.toString());
+                int totalammount = 0;
                 if (snapshot.exists() && snapshot.getChildrenCount()>0){
-                    int totalammount = 0;
-
                     for (DataSnapshot snap:snapshot.getChildren()){
+                        Log.d("snap",snap.toString());
 
                         Data data =snap.getValue(Data.class);
 
                         totalammount+=data.getAmount();
 
                         String sttotal=String.valueOf("Month Budget: "+totalammount);
-
                         totalBudgetAmountTv.setText(sttotal);
 
                     }
@@ -130,6 +186,7 @@ public class BudgetActivity extends AppCompatActivity {
                     personalRef.child("dailyBudget").setValue(dailyBudget);
 
                 }else {
+                    totalBudgetAmountTv.setText(String.valueOf("Month Budget: "+ totalammount));
                     personalRef.child("budget").setValue(0);
                     personalRef.child("weeklyBudget").setValue(0);
                     personalRef.child("dailyBudget").setValue(0);
@@ -143,103 +200,13 @@ public class BudgetActivity extends AppCompatActivity {
             }
         });
 
-        getMonthTransportBudgetRatios();
-        getMonthFoodBudgetRatios();
-        getMonthHouseBudgetRatios();
-        getMonthEntBudgetRatios();
-        getMonthEduBudgetRatios();
-        getMonthCharityBudgetRatios();
-        getMonthAppBudgetRatios();
-        getMonthHealthBudgetRatios();
-        getMonthPerBudgetRatios();
-        getMonthOtherBudgetRatios();
     }
 
-//    Add item to firebase
-    public void additem(){
-        AlertDialog.Builder myDialog = new AlertDialog.Builder(this);
-        LayoutInflater inflater = LayoutInflater.from(this);
-        View myView = inflater.inflate(R.layout.input_layout,null);
-        myDialog.setView(myView);
-
-        final AlertDialog dialog = myDialog.create();
-        dialog.setCancelable(false);
-
-//        Adding item to the realtime firedatabase
-
-        final Spinner itemSpinner = myView.findViewById(R.id.itemSpinner);
-        final EditText amount = myView.findViewById(R.id.amount);
-        final Button cancel = myView.findViewById(R.id.cancel);
-        final Button save = myView.findViewById(R.id.save);
-
-        save.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-
-                String budgetAmount = amount.getText().toString();
-                String budgetItem = itemSpinner.getSelectedItem().toString();
-
-                if(TextUtils.isEmpty(budgetAmount)){
-                    amount.setError("Amount is required");
-                    return;
-                }
-                if (budgetItem.equals("Select item")) {
-                    Toast.makeText(BudgetActivity.this, "Select a valid item", Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    loader.setMessage("adding a budget item");
-                    loader.setCanceledOnTouchOutside(false);
-                    loader.show();
-
-                    String id = budgetRef.push().getKey();
-                    DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                    Calendar cal = Calendar.getInstance();
-                    String date = dateFormat.format(cal.getTime());
-
-                    MutableDateTime epoch = new MutableDateTime();
-                    epoch.setDate(0);
-                    DateTime now = new DateTime();
-                    Months months = Months.monthsBetween(epoch,now);
-                    Weeks weeks = Weeks.weeksBetween(epoch,now);
-
-                    String itemDay = budgetItem+date;
-                    String itemWeek = budgetItem+weeks.getWeeks();
-                    String itemMonth = budgetItem+months.getMonths();
-
-                    Data data = new Data(budgetItem, date, id, itemDay, itemWeek, itemMonth ,Integer.parseInt(budgetAmount),months.getMonths(),weeks.getWeeks(), null);
-                    budgetRef.child(id).setValue(data).addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if(task.isSuccessful()){
-                                Toast.makeText(BudgetActivity.this, "Budget item added successfuly", Toast.LENGTH_SHORT).show();
-                            }else {
-                                Toast.makeText(BudgetActivity.this, task.getException().toString(), Toast.LENGTH_SHORT).show();
-                            }
-                            loader.dismiss();
-                        }
-                    });
-                }
-                dialog.dismiss();
-            }
-        });
-
-        cancel.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
-    }
-
-    protected void onStart(){
-        super.onStart();
-
+    private void displayData() {
         FirebaseRecyclerOptions<Data> options =
                 new FirebaseRecyclerOptions.Builder<Data>()
-                .setQuery(budgetRef, Data.class)
-                .build();
+                        .setQuery(budgetRef.orderByChild("date").equalTo("2-"+mSelected+"-"+ySelected), Data.class)
+                        .build();
 
         FirebaseRecyclerAdapter<Data, MyViewHolder> adapter = new FirebaseRecyclerAdapter<Data, MyViewHolder>(options){
             @Override
@@ -278,6 +245,8 @@ public class BudgetActivity extends AppCompatActivity {
                     case "Other":
                         holder.imageView.setImageResource(R.drawable.ic_other);
                         break;
+                    case "Health":
+                        holder.imageView.setImageResource(R.drawable.ic_health);
                 }
 
                 holder.mView.setOnClickListener(new View.OnClickListener(){
@@ -303,6 +272,94 @@ public class BudgetActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         adapter.startListening();
         adapter.notifyDataSetChanged();
+    }
+
+
+    //    Add item to firebase
+    public void additem(){
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(this);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View myView = inflater.inflate(R.layout.input_layout,null);
+        myDialog.setView(myView);
+
+        final AlertDialog dialog = myDialog.create();
+        dialog.setCancelable(false);
+
+//        Adding item to the realtime firedatabase
+
+        final Spinner itemSpinner = myView.findViewById(R.id.itemSpinner);
+        final EditText amount = myView.findViewById(R.id.amount);
+        final Button cancel = myView.findViewById(R.id.cancel);
+        final Button save = myView.findViewById(R.id.save);
+        final TextView tvSelectedDate = myView.findViewById(R.id.selectedDate);
+
+        tvSelectedDate.setText("Periode: " + mSelected+"/"+ySelected);
+
+        save.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+
+                String budgetAmount = amount.getText().toString();
+                String budgetItem = itemSpinner.getSelectedItem().toString();
+
+                if(TextUtils.isEmpty(budgetAmount)){
+                    amount.setError("Amount is required");
+                    return;
+                }
+                if (budgetItem.equals("Select item")) {
+                    Toast.makeText(BudgetActivity.this, "Select a valid item", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    loader.setMessage("adding a budget item");
+                    loader.setCanceledOnTouchOutside(false);
+                    loader.show();
+
+                    String id = budgetRef.push().getKey();
+                    Log.d("id pushx",id);
+
+                    String date = "2-"+mSelected+"-"+ySelected;
+
+                    MutableDateTime epoch = new MutableDateTime();
+                    epoch.setDate(0);
+
+                    Months months = Months.monthsBetween(epoch,specificDateSelected);
+                    Weeks weeks = Weeks.weeksBetween(epoch,specificDateSelected);
+
+                    String itemDay = budgetItem+date;
+                    String itemWeek = budgetItem+weeks.getWeeks();
+                    String itemMonth = budgetItem+months.getMonths();
+
+                    Data data = new Data(budgetItem, date, id, itemDay, itemWeek, itemMonth ,Integer.parseInt(budgetAmount),months.getMonths(),weeks.getWeeks(), null);
+                    budgetRef.child(id).setValue(data).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if(task.isSuccessful()){
+                                Toast.makeText(BudgetActivity.this, "Budget item added successfuly", Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(BudgetActivity.this, task.getException().toString(), Toast.LENGTH_SHORT).show();
+                            }
+                            loader.dismiss();
+                        }
+                    });
+                }
+                dialog.dismiss();
+            }
+        });
+
+        cancel.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    protected void onStart(){
+        super.onStart();
+        displayData();
+        showMonthBudget();
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder{
@@ -348,10 +405,13 @@ public class BudgetActivity extends AppCompatActivity {
         final TextView mItem = mView.findViewById(R.id.itemName);
         final EditText mAmount = mView.findViewById(R.id.amount);
         final EditText mNotes = mView.findViewById(R.id.note);
+        final TextView mPeriode = mView.findViewById(R.id.tvPeriode);
 
        mNotes.setVisibility(View.GONE);
+       mPeriode.setText("Periode: "+mSelected+"/"+ySelected);
 
        mItem.setText(item);
+
 
        mAmount.setText(String.valueOf(amount));
        mAmount.setSelection(String.valueOf(amount).length());
@@ -364,15 +424,12 @@ public class BudgetActivity extends AppCompatActivity {
            public void onClick(View view) {
                amount = Integer.parseInt(mAmount.getText().toString());
 
-               DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-               Calendar cal = Calendar.getInstance();
-               String date = dateFormat.format(cal.getTime());
+               String date = "2-"+mSelected+"-"+ySelected;
 
                MutableDateTime epoch = new MutableDateTime();
                epoch.setDate(0);
-               DateTime now = new DateTime();
-               Months months = Months.monthsBetween(epoch,now);
-               Weeks weeks = Weeks.weeksBetween(epoch,now);
+               Months months = Months.monthsBetween(epoch,specificDateSelected);
+               Weeks weeks = Weeks.weeksBetween(epoch,specificDateSelected);
 
                String itemDay = item+date;
                String itemWeek = item+weeks.getWeeks();
@@ -407,7 +464,6 @@ public class BudgetActivity extends AppCompatActivity {
                        }else {
                            Toast.makeText(BudgetActivity.this, task.getException().toString(), Toast.LENGTH_SHORT).show();
                        }
-
                    }
                });
 
@@ -417,6 +473,7 @@ public class BudgetActivity extends AppCompatActivity {
 
         dialog.show();
     }
+
     private void getMonthTransportBudgetRatios(){
         Query query = budgetRef.orderByChild("item").equalTo("Transport");
         query.addValueEventListener(new ValueEventListener() {
@@ -757,4 +814,5 @@ public class BudgetActivity extends AppCompatActivity {
             }
         });
     }
+
 }

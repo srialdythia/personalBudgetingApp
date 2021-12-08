@@ -17,6 +17,21 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
+    <Button
+        android:id="@+id/btn_sMonth"
+        android:layout_margin="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Month"/>
+
+    <TextView
+        android:layout_marginLeft="10dp"
+        android:id="@+id/tvPeriode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Periode: "/>
+
+
     <TextView
         android:id="@+id/totalWeekAmountTv"
         android:layout_width="match_parent"

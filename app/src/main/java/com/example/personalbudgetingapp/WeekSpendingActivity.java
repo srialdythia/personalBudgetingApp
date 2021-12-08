@@ -7,10 +7,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialog;
+import com.github.dewinjm.monthyearpicker.MonthYearPickerDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -25,6 +30,7 @@ import org.joda.time.MutableDateTime;
 import org.joda.time.Weeks;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +47,9 @@ public class WeekSpendingActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private String onlineUserId = "";
     private DatabaseReference expensesRef;
+    private Button btnSMonth;
+    private String ySelected, mSelected;
+    private DateTime specificDateSelected;
 
     private String type = "";
 
@@ -51,6 +60,8 @@ public class WeekSpendingActivity extends AppCompatActivity {
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         totalWeekAmountTv = findViewById(R.id.totalWeekAmountTv);
         progressBar = findViewById(R.id.progressBar);
@@ -76,9 +87,43 @@ public class WeekSpendingActivity extends AppCompatActivity {
                 readWeekSpendingItems();
             }else if (type.equals("month")){
                 getSupportActionBar().setTitle("Month Spending");
-                readMonthSpendingItems();
+
             }
         }
+        
+        btnSMonth = findViewById(R.id.btn_sMonth);
+        btnSMonth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int yearSelected;
+                int monthSelected;
+
+                //Set default values
+                Calendar calendar = Calendar.getInstance();
+                yearSelected = calendar.get(Calendar.YEAR);
+                monthSelected = calendar.get(Calendar.MONTH);
+
+                MonthYearPickerDialogFragment dialogFragment = MonthYearPickerDialogFragment
+                        .getInstance(monthSelected, yearSelected);
+
+                dialogFragment.show(getSupportFragmentManager(), null);
+                dialogFragment.setOnDateSetListener(new MonthYearPickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(int year, int monthOfYear) {
+                        // do something
+                        ySelected = String.valueOf(year);
+                        mSelected = String.valueOf(monthOfYear+1);
+                        specificDateSelected = new DateTime(ySelected+"-"+mSelected+"-"+"2");
+                        Toast.makeText(getApplicationContext(), specificDateSelected.toString(), Toast.LENGTH_SHORT).show();
+
+                        TextView tvPeriode = findViewById(R.id.tvPeriode);
+
+                        tvPeriode.setText("Periode: " + mSelected + "/" + ySelected);
+                        readMonthSpendingItems();
+                    }
+                });
+            }
+        });
 
     }
 
@@ -86,8 +131,9 @@ public class WeekSpendingActivity extends AppCompatActivity {
 
         MutableDateTime epoch = new MutableDateTime();
         epoch.setDate(0);
-        DateTime now = new DateTime();
-        Months months = Months.monthsBetween(epoch,now);
+        Months months = Months.monthsBetween(epoch,specificDateSelected);
+
+        Log.d("months", String.valueOf(months.getMonths()));
 
         expensesRef = FirebaseDatabase.getInstance().getReference("expenses").child(onlineUserId);
         Query query = expensesRef.orderByChild("month").equalTo(months.getMonths());

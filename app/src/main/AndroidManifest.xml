@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.personalbudgetingapp">
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,31 +15,39 @@
         android:theme="@style/Theme.PersonalBudgetingApp">
         <activity
             android:name=".AccountActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".HistoryActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".MonthlyAnalyticsActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".ChooseAnalyticActivity" />
         <activity
             android:name=".WeeklyAnalyticsActivity"
             android:exported="true" />
         <activity
             android:name=".DailyAnalyticsActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".ChooseAnalyticActivity" />
         <activity
             android:name=".ChooseAnalyticActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".WeekSpendingActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".TodaySpendingActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".BudgetActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true" />

@@ -8,7 +8,7 @@
     android:orientation="vertical"
     tools:context=".ChooseAnalyticActivity">
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+        android:id="@+id/choose_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#000"
